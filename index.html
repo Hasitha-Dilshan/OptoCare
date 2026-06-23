@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OptoCare Patient Manager</title>
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Animations & Styles */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
+        
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-zoom-in { animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        
+        /* Smooth scrolling and hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Print Styles */
+        @media print {
+            body { background: white !important; }
+            .print-hidden { display: none !important; }
+            .print-block { display: block !important; }
+            .shadow-sm, .shadow-md, .shadow-xl { box-shadow: none !important; }
+            .border { border-color: #000 !important; }
+            .print-no-bg { background: transparent !important; }
+        }
+
+        /* Dynamic Theme Classes */
+        .theme-pink { --color-primary: #db2777; --color-hover: #be185d; --color-light: #fce7f3; --bg-color: #fdf2f8; }
+        .theme-purple { --color-primary: #9333ea; --color-hover: #7e22ce; --color-light: #f3e8ff; --bg-color: #faf5ff; }
+        .theme-blue { --color-primary: #2563eb; --color-hover: #1d4ed8; --color-light: #dbeafe; --bg-color: #eff6ff; }
+        .theme-green { --color-primary: #059669; --color-hover: #047857; --color-light: #d1fae5; --bg-color: #ecfdf5; }
+        .theme-orange { --color-primary: #ea580c; --color-hover: #c2410c; --color-light: #ffedd5; --bg-color: #fff7ed; }
+
+        .btn-primary { background-color: var(--color-primary); color: white; }
+        .btn-primary:hover { background-color: var(--color-hover); }
+        .text-primary { color: var(--color-primary); }
+        .bg-primary-light { background-color: var(--color-light); color: var(--color-primary); }
+        .bg-app { background-color: var(--bg-color); }
+        .border-primary { border-color: var(--color-primary); }
+        .focus-ring-primary:focus { outline: none; box-shadow: 0 0 0 3px var(--color-light); border-color: var(--color-primary); }
+    </style>
+</head>
+<body class="text-gray-800 bg-app transition-colors duration-500 min-h-screen pb-24 md:pb-0 md:pl-20 theme-pink" id="app-body">
+
+    <!-- Background Image Layer -->
+    <div id="bg-layer" class="fixed inset-0 z-[-2] w-full h-full bg-cover bg-center hidden print-hidden"></div>
+    <div id="blur-layer" class="fixed inset-0 z-[-1] backdrop-blur-md bg-white/40 w-full h-full hidden print-hidden"></div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-2 hidden transition-all duration-300 print-hidden">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toast-msg" class="font-medium text-sm">Success!</span>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100 p-4 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+        
+        <div class="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-md relative z-10 border border-white/50">
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-tr from-pink-500 to-purple-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fas fa-eye text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-purple-600">OptoCare</h1>
+                <p class="text-gray-500 mt-2 font-medium">Patients Records Analyse</p>
+            </div>
+            
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2 text-center">Enter Secure PIN</label>
+                    <input type="password" id="pin-input" class="w-full px-5 py-4 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all text-center text-3xl tracking-[0.5em] font-bold text-gray-800 shadow-inner" placeholder="••••" maxLength="4">
+                    <p class="text-xs text-center text-gray-400 mt-3"> <!--Hint: default PIN is 1234--></p>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
+                    Log In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <div id="main-app" class="hidden min-h-screen">
+        
+        <!-- Navigation Bar -->
+        <nav class="fixed bottom-0 left-0 w-full md:w-20 md:h-full bg-white/90 backdrop-blur-lg border-t md:border-t-0 md:border-r border-gray-200 z-40 flex md:flex-col justify-around md:justify-start items-center p-2 md:py-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] print-hidden">
+            <div class="hidden md:flex bg-gradient-to-tr from-pink-500 to-purple-500 w-12 h-12 rounded-xl items-center justify-center mb-8 shadow-md">
+                <i class="fas fa-eye text-white text-xl"></i>
+            </div>
+            
+            <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all btn-primary shadow-md transform scale-105">
+                <i class="fas fa-home text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Entry</span>
+            </button>
+            
+            <button onclick="switchTab('records')" id="nav-records" class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all text-gray-500 hover:bg-gray-100">
+                <i class="fas fa-clipboard-list text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Records</span>
+            </button>
+            
+            <button onclick="switchTab('summary')" id="nav-summary" class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all text-gray-500 hover:bg-gray-100">
+                <i class="fas fa-chart-pie text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Summary</span>
+            </button>
+            
+            <button onclick="switchTab('manage')" id="nav-manage" class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all text-gray-500 hover:bg-gray-100">
+                <i class="fas fa-cog text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Manage</span>
+            </button>
+            
+            <button onclick="logout()" class="flex flex-col items-center justify-center p-2 rounded-xl text-red-500 hover:bg-red-50 transition-all w-16 h-16 md:mt-auto">
+                <i class="fas fa-sign-out-alt text-xl mb-1"></i>
+                <span class="text-[10px] font-semibold">Logout</span>
+            </button>
+        </nav>
+
+        <main class="p-4 md:p-8 max-w-6xl mx-auto">
+            
+            <!-- Print Header -->
+            <div class="hidden print-block text-center mb-8 border-b-2 border-gray-800 pb-4">
+                <h1 class="text-4xl font-bold">OptoCare Patient Report</h1>
+                <p class="text-xl text-gray-600 mt-2" id="print-date"></p>
+            </div>
+
+            <!-- TAB 1: HOME (ENTRY) -->
+            <div id="tab-home" class="tab-content animate-fade-in print-hidden">
+                <div class="flex items-center justify-between mb-6 md:mb-8">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">New Patient Entry</h2>
+                        <p class="text-gray-500 text-sm md:text-base">Add a new consultation record.</p>
+                    </div>
+                    <div class="px-3 md:px-4 py-2 bg-primary-light rounded-lg font-bold flex flex-col items-center border border-primary">
+                        <span class="text-[10px] md:text-xs uppercase tracking-wider opacity-70">Next Index</span>
+                        <span class="text-lg md:text-xl" id="next-index-display">0001</span>
+                    </div>
+                </div>
+
+                <form id="add-patient-form" class="bg-white/90 backdrop-blur-lg rounded-3xl p-4 md:p-6 shadow-xl border border-white">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        
+                        <!-- Details -->
+                        <div class="space-y-4 md:col-span-2 bg-gray-50/80 p-4 md:p-6 rounded-2xl border border-gray-100">
+                            <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-user-circle mr-2 text-lg"></i> Patient Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                    <input type="text" id="entry-name" required class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. Nimal Perera">
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Age *</label>
+                                    <input type="number" id="entry-age" required class="w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. 35">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Examination -->
+                        <div class="space-y-4 bg-blue-50/50 p-4 md:p-6 rounded-2xl border border-blue-100">
+                            <h3 class="font-semibold text-blue-800 flex items-center"><i class="fas fa-eye mr-2"></i> Examination</h3>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Vision</label>
+                                <select id="entry-vision" class="w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base">
+                                    <option value="6/6">6/6</option>
+                                    <option value="6/9">6/9</option>
+                                    <option value="6/12">6/12</option>
+                                    <option value="6/18">6/18</option>
+                                    <option value="6/24">6/24</option>
+                                    <option value="6/36">6/36</option>
+                                    <option value="6/60">6/60</option>
+                                    <option value="Count Fingers (CF)">Count Fingers (CF)</option>
+                                    <option value="Hand Movements (HM)">Hand Movements (HM)</option>
+                                    <option value="Light Perception (LP)">Light Perception (LP)</option>
+                                    <option value="No Light Perception (NLP)">No Light Perception (NLP)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Power / Refraction</label>
+                                <input type="text" id="entry-power" class="w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. OD -1.00, OS -1.50">
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Symptoms</label>
+                                <textarea id="entry-symptoms" rows="2" class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. Blurry vision"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Diagnosis & Plan -->
+                        <div class="space-y-4 bg-green-50/50 p-4 md:p-6 rounded-2xl border border-green-100">
+                            <h3 class="font-semibold text-green-800 flex items-center"><i class="fas fa-heartbeat mr-2"></i> Diagnosis & Plan</h3>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Diagnostic</label>
+                                <input type="text" id="entry-diagnostic" class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. Myopia, Presbyopia">
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Treatment Plan</label>
+                                <textarea id="entry-treatment" rows="2" class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. Prescribed glasses"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Special (SP) Note</label>
+                                <input type="text" id="entry-spnote" class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="Any additional notes">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 md:mt-8 flex justify-end">
+                        <button type="submit" class="w-full md:w-auto btn-primary px-8 py-4 rounded-xl font-bold flex justify-center items-center shadow-lg transition-all active:scale-95 text-sm md:text-base">
+                            <i class="fas fa-plus mr-2"></i> Save Patient Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: RECORDS -->
+            <div id="tab-records" class="tab-content hidden animate-fade-in print-block">
+                <div class="flex justify-between items-center mb-6 print-hidden">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Patient Records</h2>
+                    <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white px-3 md:px-4 py-2 rounded-lg flex items-center transition-all text-xs md:text-sm font-medium">
+                        <i class="fas fa-print mr-2"></i> Print
+                    </button>
+                </div>
+                
+                <div id="records-container">
+                    <!-- Records dynamically populated here -->
+                </div>
+            </div>
+
+            <!-- TAB 3: SUMMARY -->
+            <div id="tab-summary" class="tab-content hidden animate-fade-in print-block">
+                <div class="flex justify-between items-center mb-6 print-hidden">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Monthly Summary</h2>
+                    <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white px-3 md:px-4 py-2 rounded-lg flex items-center transition-all text-xs md:text-sm font-medium">
+                        <i class="fas fa-print mr-2"></i> Print Report
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
+                    <div class="bg-white/90 backdrop-blur-lg p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center print-no-bg">
+                        <div class="p-4 rounded-2xl bg-primary-light mr-4 md:mr-6">
+                            <i class="fas fa-users text-2xl md:text-3xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-500 font-medium uppercase tracking-wider">Total Patients</p>
+                            <h3 class="text-3xl md:text-4xl font-bold text-gray-800" id="stat-total">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 backdrop-blur-lg p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center print-no-bg">
+                        <div class="p-4 rounded-2xl bg-blue-100 text-blue-600 mr-4 md:mr-6">
+                            <i class="fas fa-calendar-check text-2xl md:text-3xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-500 font-medium uppercase tracking-wider">This Month</p>
+                            <h3 class="text-3xl md:text-4xl font-bold text-gray-800" id="stat-month">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                    <div class="bg-white/90 backdrop-blur-lg p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 print-no-bg">
+                        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-chart-pie mr-2 text-gray-400"></i> Top Diagnostics</h3>
+                        <div id="chart-diagnostics" class="space-y-4"></div>
+                    </div>
+                    <div class="bg-white/90 backdrop-blur-lg p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 print-no-bg">
+                        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center"><i class="fas fa-exclamation-triangle mr-2 text-gray-400"></i> Common Symptoms</h3>
+                        <div id="chart-symptoms" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: MANAGE -->
+            <div id="tab-manage" class="tab-content hidden animate-fade-in print-hidden max-w-4xl mx-auto">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 md:mb-8">System Settings</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <!-- Theme Color -->
+                    <div class="bg-white/90 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-palette mr-2 text-primary"></i> Theme Color</h3>
+                        <div class="flex space-x-3 md:space-x-4">
+                            <button onclick="setTheme('pink')" class="w-10 h-10 rounded-full bg-pink-600 transition-all border-2 theme-btn" data-color="pink"></button>
+                            <button onclick="setTheme('purple')" class="w-10 h-10 rounded-full bg-purple-600 transition-all border-2 theme-btn" data-color="purple"></button>
+                            <button onclick="setTheme('blue')" class="w-10 h-10 rounded-full bg-blue-600 transition-all border-2 theme-btn" data-color="blue"></button>
+                            <button onclick="setTheme('green')" class="w-10 h-10 rounded-full bg-emerald-600 transition-all border-2 theme-btn" data-color="green"></button>
+                            <button onclick="setTheme('orange')" class="w-10 h-10 rounded-full bg-orange-500 transition-all border-2 theme-btn" data-color="orange"></button>
+                        </div>
+                    </div>
+
+                    <!-- Local Background Image -->
+                    <div class="bg-white/90 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-image mr-2 text-primary"></i> Background Image</h3>
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <input type="file" id="bg-upload" accept="image/*" class="hidden">
+                                <label for="bg-upload" class="cursor-pointer flex items-center justify-center w-full p-3 md:p-4 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-sm text-gray-600">
+                                    <i class="fas fa-upload mr-2"></i> Select Image from Phone
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="bg-blur-toggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600" id="blur-toggle-ui"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Blur Background</span>
+                                </label>
+                                <button onclick="removeBackground()" class="text-xs text-red-500 font-medium hover:underline">Remove Image</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exports -->
+                    <div class="bg-white/90 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 md:col-span-2">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-download mr-2 text-primary"></i> Export Data</h3>
+                        <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
+                            <button onclick="exportCSV()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 md:py-4 rounded-xl flex justify-center items-center transition-colors text-sm md:text-base shadow-md">
+                                <i class="fas fa-file-excel mr-2"></i> Export Excel (CSV)
+                            </button>
+                            <button onclick="switchTab('summary'); setTimeout(()=>window.print(), 500)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-4 rounded-xl flex justify-center items-center transition-colors text-sm md:text-base shadow-md">
+                                <i class="fas fa-file-pdf mr-2"></i> Print Report (PDF)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cloud Sync Backup -->
+                    <div class="bg-blue-50/80 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-blue-200 md:col-span-2 mt-2">
+                        <h3 class="text-base md:text-lg font-bold text-blue-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt mr-2"></i> Cloud Backup (Firebase)</h3>
+                        <p class="text-blue-600 text-xs md:text-sm mb-4">Currently saving to Local Storage. When connected to the internet, your data will auto-sync. You can also sync manually.</p>
+                        <button onclick="syncToCloud(false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center transition-colors w-full sm:w-auto shadow-md">
+                            <i class="fas fa-sync mr-2" id="sync-icon"></i> Sync Data to Cloud
+                        </button>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="bg-red-50/80 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-red-200 md:col-span-2 mt-2">
+                        <h3 class="text-base md:text-lg font-bold text-red-800 mb-2 flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i> Danger Zone</h3>
+                        <p class="text-red-600 text-xs md:text-sm mb-4">This action cannot be undone. It will permanently delete all patient records from this device and the Cloud.</p>
+                        <button onclick="showConfirmModal('WARNING: This will delete ALL patient records permanently. Are you absolutely sure?', performFactoryReset)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center transition-colors w-full sm:w-auto shadow-md">
+                            <i class="fas fa-trash-alt mr-2"></i> Factory Reset App
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- View Modal -->
+    <div id="modal-view" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm hidden print-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-zoom-in">
+            <div class="p-4 md:p-6 bg-primary-light text-primary flex justify-between items-center border-b border-primary border-opacity-20">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold" id="view-name">Name</h2>
+                    <span class="opacity-80 text-xs md:text-sm font-mono" id="view-meta">Index | Date</span>
+                </div>
+                <button onclick="closeModal('modal-view')" class="text-primary hover:bg-white/50 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 max-h-[70vh] overflow-y-auto no-scrollbar">
+                <div class="space-y-4">
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Age</p><p class="text-base md:text-lg text-gray-800" id="view-age">-</p></div>
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Vision</p><p class="text-base md:text-lg text-gray-800" id="view-vision">-</p></div>
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Power / Refraction</p><p class="text-base md:text-lg text-gray-800" id="view-power">-</p></div>
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Symptoms</p><p class="text-base md:text-lg text-gray-800" id="view-symptoms">-</p></div>
+                </div>
+                <div class="space-y-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Diagnostic</p><p class="text-base md:text-lg text-gray-800 font-medium" id="view-diagnostic">-</p></div>
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Treatment Plan</p><p class="text-sm md:text-base text-gray-800" id="view-treatment">-</p></div>
+                    <div><p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-wider font-bold">Special Notes</p><p class="text-sm md:text-base text-gray-800 italic" id="view-spnote">-</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm hidden print-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-zoom-in">
+            <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800">Edit Patient Record</h2>
+                <button onclick="closeModal('modal-edit')" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-form" class="p-4 md:p-6 overflow-y-auto no-scrollbar flex-1">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input type="text" id="edit-name" required class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Age</label>
+                        <input type="number" id="edit-age" required class="w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Vision</label>
+                        <select id="edit-vision" class="w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                            <option value="6/6">6/6</option>
+                            <option value="6/9">6/9</option>
+                            <option value="6/12">6/12</option>
+                            <option value="6/18">6/18</option>
+                            <option value="6/24">6/24</option>
+                            <option value="6/36">6/36</option>
+                            <option value="6/60">6/60</option>
+                            <option value="Count Fingers (CF)">Count Fingers (CF)</option>
+                            <option value="Hand Movements (HM)">Hand Movements (HM)</option>
+                            <option value="Light Perception (LP)">Light Perception (LP)</option>
+                            <option value="No Light Perception (NLP)">No Light Perception (NLP)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Power</label>
+                        <input type="text" id="edit-power" class="w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Symptoms</label>
+                        <input type="text" id="edit-symptoms" class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Diagnostic</label>
+                        <input type="text" id="edit-diagnostic" class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Treatment Plan</label>
+                        <input type="text" id="edit-treatment" class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Special Notes</label>
+                        <input type="text" id="edit-spnote" class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-4">
+                    <button type="button" onclick="closeModal('modal-edit')" class="px-5 py-2 text-sm md:text-base text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-sm md:text-base text-white btn-primary rounded-xl shadow-md">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="modal-confirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm hidden print-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center animate-zoom-in">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
+            </div>
+            <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Are you sure?</h3>
+            <p class="text-xs md:text-sm text-gray-500 mb-6" id="confirm-msg">Message here</p>
+            <div class="flex justify-center space-x-3">
+                <button onclick="closeModal('modal-confirm')" class="px-5 md:px-6 py-2 md:py-3 text-sm md:text-base text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-medium transition-colors">Cancel</button>
+                <button id="confirm-yes-btn" class="px-5 md:px-6 py-2 md:py-3 text-sm md:text-base text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md font-medium transition-colors">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC (LOCAL FIRST + AUTO CLOUD SYNC) -->
+    <script type="module">
+        // --- FIREBASE IMPORTS ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // GITHUB PAGES SETUP: Replace the object below with your Firebase Config when you are ready to enable Cloud Storage!
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            /* Paste your Firebase config here when ready! E.g.
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "...",
+            messagingSenderId: "...",
+            appId: "..."
+            */
+        };
+        
+        let app, auth, db;
+        let appId = 'optocare-app';
+        let currentUser = null;
+
+        try {
+            if(Object.keys(firebaseConfig).length > 0) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch(e) { console.log("Firebase not configured yet, running purely in Local mode."); }
+
+        // --- LOCAL DATA & STATE ---
+        let patients = JSON.parse(localStorage.getItem('optoPatients')) || [];
+        let themeColor = localStorage.getItem('optoTheme') || 'pink';
+        let bgImage = localStorage.getItem('optoBgImage') || '';
+        let blurBg = JSON.parse(localStorage.getItem('optoBlurBg')) || false;
+        let confirmAction = null;
+
+        // --- AUTHENTICATION FLOW (FIREBASE) ---
+        const initAuth = async () => {
+            if(!auth) return; // Skip if no config provided yet
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) { console.error("Firebase Auth Error:", error); }
+        };
+
+        if(auth) {
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                // If local storage is empty, try to download from Cloud once on first load
+                if (user && patients.length === 0) {
+                    try {
+                        const patientsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'patients');
+                        const snapshot = await getDocs(patientsRef);
+                        snapshot.forEach(doc => patients.push(doc.data()));
+                        if(patients.length > 0) {
+                            patients.sort((a,b) => b.id - a.id);
+                            savePatients(true); // Save locally but don't re-upload
+                            renderRecords();
+                            renderSummary();
+                        }
+                    } catch(e) { console.log("No cloud data found to download."); }
+                }
+            });
+        }
+
+        // Initialize App UI
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuth(); 
+            applyTheme(themeColor);
+            applyBackground();
+            document.getElementById('bg-blur-toggle').checked = blurBg;
+            document.getElementById('print-date').innerText = `Generated on: ${getTodayDate()}`;
+            updateNextIndex();
+            
+            document.querySelectorAll('.capitalize-input').forEach(input => {
+                input.addEventListener('blur', function() {
+                    this.value = this.value.replace(/\b\w/g, c => c.toUpperCase());
+                });
+            });
+        });
+
+        // --- AUTO CLOUD SYNC LOGIC ---
+        
+        // Auto Sync when the device reconnects to the Internet
+        window.addEventListener('online', () => {
+            if(patients.length > 0) window.syncToCloud(true); // true = silent background sync
+        });
+
+        // Main Sync Function
+        window.syncToCloud = async function(isSilent = false) {
+            if (!navigator.onLine) {
+                if(!isSilent) showToast("No internet connection!");
+                return;
+            }
+            if (!currentUser || !db) {
+                if(!isSilent) showToast("Firebase not configured yet. Running safely in local mode.");
+                return;
+            }
+
+            let icon = document.getElementById('sync-icon');
+            if(icon) icon.classList.add('fa-spin');
+
+            try {
+                // Upload all local patients to Firebase Database
+                const batchPromises = patients.map(p => {
+                    const patientDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', p.id.toString());
+                    return setDoc(patientDoc, p); // Overwrites/updates cloud with current local data
+                });
+                await Promise.all(batchPromises);
+                if(!isSilent) showToast("Successfully backed up to Cloud!");
+            } catch(err) {
+                console.error("Cloud sync issue:", err);
+                if(!isSilent) showToast("Cloud Sync failed.");
+            } finally {
+                if(icon) icon.classList.remove('fa-spin');
+            }
+        }
+
+        // Master Save Function (Saves Locally, then triggers Sync)
+        function savePatients(skipSync = false) {
+            localStorage.setItem('optoPatients', JSON.stringify(patients));
+            updateNextIndex();
+            
+            // Automatically sync in background if online and connected to firebase
+            if(!skipSync && navigator.onLine && currentUser && db) {
+                window.syncToCloud(true); 
+            }
+        }
+
+
+        // --- LOGIN & LOGOUT ---
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('pin-input').value;
+            if (pin === '1234') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                showToast('Welcome to OptoCare!');
+                switchTab('home');
+                renderRecords(); 
+                renderSummary(); 
+            } else {
+                showToast('Incorrect PIN');
+            }
+        });
+
+        window.logout = function() {
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('pin-input').value = '';
+        }
+
+        // --- NAVIGATION ---
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all text-gray-500 hover:bg-gray-100';
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.className = 'nav-btn flex flex-col items-center justify-center p-2 rounded-xl w-16 h-16 md:mb-4 transition-all btn-primary shadow-md transform scale-105';
+
+            if(tabId === 'records') renderRecords();
+            if(tabId === 'summary') renderSummary();
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            toast.classList.add('animate-fade-in');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('animate-fade-in');
+            }, 3000);
+        }
+
+        function getTodayDate() { return new Date().toISOString().split('T')[0]; }
+
+        function getNextIndex() {
+            const maxIndex = patients.reduce((max, p) => Math.max(max, parseInt(p.indexNo, 10)), 0);
+            return String(maxIndex + 1).padStart(4, '0');
+        }
+
+        function updateNextIndex() {
+            document.getElementById('next-index-display').innerText = getNextIndex();
+        }
+
+
+        // --- CRUD OPERATIONS ---
+        
+        // CREATE
+        document.getElementById('add-patient-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('entry-name').value.trim();
+            const age = document.getElementById('entry-age').value.trim();
+            if(!name || !age) { showToast('Name and Age required'); return; }
+
+            const newPatient = {
+                id: Date.now(),
+                indexNo: getNextIndex(),
+                date: getTodayDate(),
+                name: name,
+                age: age,
+                vision: document.getElementById('entry-vision').value,
+                power: document.getElementById('entry-power').value,
+                symptoms: document.getElementById('entry-symptoms').value,
+                diagnostic: document.getElementById('entry-diagnostic').value,
+                treatment: document.getElementById('entry-treatment').value,
+                spNote: document.getElementById('entry-spnote').value
+            };
+
+            patients.unshift(newPatient);
+            savePatients(); // Saves locally & auto-syncs
+            
+            document.getElementById('add-patient-form').reset();
+            document.getElementById('entry-vision').value = '6/6';
+            showToast('Record Saved!');
+            switchTab('records');
+        });
+
+        // UPDATE
+        document.getElementById('edit-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+            const index = patients.findIndex(x => x.id === id);
+            if(index !== -1) {
+                patients[index].name = document.getElementById('edit-name').value;
+                patients[index].age = document.getElementById('edit-age').value;
+                patients[index].vision = document.getElementById('edit-vision').value;
+                patients[index].power = document.getElementById('edit-power').value;
+                patients[index].symptoms = document.getElementById('edit-symptoms').value;
+                patients[index].diagnostic = document.getElementById('edit-diagnostic').value;
+                patients[index].treatment = document.getElementById('edit-treatment').value;
+                patients[index].spNote = document.getElementById('edit-spnote').value;
+                
+                savePatients(); // Saves locally & auto-syncs
+                renderRecords();
+                closeModal('modal-edit');
+                showToast('Record Updated!');
+            }
+        });
+
+        // DELETE
+        window.confirmDelete = function(id, name) {
+            confirmAction = async () => {
+                // 1. Remove locally
+                patients = patients.filter(x => x.id !== id);
+                savePatients(true); // Save locally without triggering auto-sync all
+                renderRecords();
+                renderSummary();
+                
+                // 2. Remove specifically from cloud if connected
+                if(navigator.onLine && currentUser && db) {
+                    try {
+                        const patientDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id.toString());
+                        await deleteDoc(patientDoc);
+                    } catch(e) { console.error("Cloud delete failed", e); }
+                }
+                showToast('Record deleted');
+            };
+            document.getElementById('confirm-msg').innerText = `Are you sure you want to delete ${name}'s record?`;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+
+        // --- RENDER VIEWS ---
+        window.renderRecords = function() {
+            const container = document.getElementById('records-container');
+            if (patients.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 bg-white/50 rounded-3xl border border-dashed border-gray-300">
+                        <i class="fas fa-file-alt text-5xl text-gray-300 mx-auto mb-4"></i>
+                        <p class="text-gray-500 font-medium text-sm md:text-base">No patient records found.</p>
+                    </div>`;
+                return;
+            }
+
+            const groups = {};
+            patients.forEach(p => {
+                const monthYear = new Date(p.date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                if(!groups[monthYear]) groups[monthYear] = [];
+                groups[monthYear].push(p);
+            });
+
+            const sortedMonths = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
+
+            let html = '';
+            sortedMonths.forEach(month => {
+                html += `
+                    <div class="mb-8 md:mb-10">
+                        <h3 class="text-lg md:text-xl font-bold text-primary mb-4 bg-white/70 inline-block px-4 py-1 rounded-full border border-primary border-opacity-20 backdrop-blur-sm print-no-bg">${month}</h3>
+                        <div class="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-gray-100 overflow-hidden print-no-bg print:border-black">
+                            <div class="overflow-x-auto no-scrollbar">
+                                <table class="w-full text-left border-collapse min-w-[600px]">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-100">
+                                            <th class="p-3 md:p-4 font-semibold text-gray-600 text-xs md:text-sm whitespace-nowrap">Index</th>
+                                            <th class="p-3 md:p-4 font-semibold text-gray-600 text-xs md:text-sm">Name</th>
+                                            <th class="p-3 md:p-4 font-semibold text-gray-600 text-xs md:text-sm">Age</th>
+                                            <th class="p-3 md:p-4 font-semibold text-gray-600 text-xs md:text-sm">Symptoms</th>
+                                            <th class="p-3 md:p-4 font-semibold text-gray-600 text-xs md:text-sm text-right print-hidden">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+
+                groups[month].forEach(p => {
+                    const safeName = p.name.replace(/'/g, "&#39;");
+                    html += `
+                        <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                            <td class="p-3 md:p-4">
+                                <span class="font-mono text-xs md:text-sm font-semibold text-primary">${p.indexNo}</span>
+                                <div class="text-[10px] md:text-xs text-gray-400 mt-1">${p.date}</div>
+                            </td>
+                            <td class="p-3 md:p-4 font-medium text-gray-800 text-sm md:text-base">${p.name}</td>
+                            <td class="p-3 md:p-4 text-gray-600 text-sm md:text-base">${p.age}</td>
+                            <td class="p-3 md:p-4 text-gray-600 text-xs md:text-sm max-w-[100px] md:max-w-[200px] truncate">${p.symptoms || 'N/A'}</td>
+                            <td class="p-3 md:p-4 text-right print-hidden">
+                                <div class="flex items-center justify-end space-x-1 md:space-x-2">
+                                    <button onclick="openViewModal(${p.id})" class="text-blue-500 hover:bg-blue-50 p-2 md:p-3 rounded-lg transition-colors"><i class="fas fa-eye"></i></button>
+                                    <button onclick="openEditModal(${p.id})" class="text-orange-500 hover:bg-orange-50 p-2 md:p-3 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
+                                    <button onclick="confirmDelete(${p.id}, '${safeName}')" class="text-red-500 hover:bg-red-50 p-2 md:p-3 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table></div></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.renderSummary = function() {
+            document.getElementById('stat-total').innerText = patients.length;
+            const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+            let monthCount = 0;
+            let diagCount = {};
+            let sympCount = {};
+
+            patients.forEach(p => {
+                if(new Date(p.date).toLocaleString('default', { month: 'long', year: 'numeric' }) === currentMonth) monthCount++;
+                if(p.diagnostic) {
+                    let d = p.diagnostic.trim();
+                    if(d) diagCount[d] = (diagCount[d] || 0) + 1;
+                }
+                if(p.symptoms) {
+                    p.symptoms.split(',').forEach(s => {
+                        let sym = s.trim();
+                        if(sym) sympCount[sym] = (sympCount[sym] || 0) + 1;
+                    });
+                }
+            });
+
+            document.getElementById('stat-month').innerText = monthCount;
+
+            const renderBars = (obj, elementId, colorClass) => {
+                const arr = Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0,5);
+                const el = document.getElementById(elementId);
+                if(arr.length === 0) {
+                    el.innerHTML = `<p class="text-gray-400 text-center py-6 text-sm">Not enough data.</p>`;
+                    return;
+                }
+                let html = '';
+                arr.forEach(([name, count]) => {
+                    const percentage = (count / patients.length) * 100;
+                    html += `
+                        <div>
+                            <div class="flex justify-between text-xs md:text-sm mb-1">
+                                <span class="font-medium text-gray-700">${name}</span>
+                                <span class="font-bold text-gray-900">${count} pts</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 md:h-3">
+                                <div class="${colorClass} h-2 md:h-3 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                el.innerHTML = html;
+            };
+
+            renderBars(diagCount, 'chart-diagnostics', 'bg-primary-light border border-primary !bg-[var(--color-primary)]');
+            renderBars(sympCount, 'chart-symptoms', 'bg-orange-400');
+        }
+
+
+        // --- MODALS HANDLING ---
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+
+        window.openViewModal = function(id) {
+            const p = patients.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('view-name').innerText = p.name;
+            document.getElementById('view-meta').innerText = `Index: ${p.indexNo} | Date: ${p.date}`;
+            document.getElementById('view-age').innerText = p.age;
+            document.getElementById('view-vision').innerText = p.vision || 'N/A';
+            document.getElementById('view-power').innerText = p.power || 'N/A';
+            document.getElementById('view-symptoms').innerText = p.symptoms || 'N/A';
+            document.getElementById('view-diagnostic').innerText = p.diagnostic || 'N/A';
+            document.getElementById('view-treatment').innerText = p.treatment || 'N/A';
+            document.getElementById('view-spnote').innerText = p.spNote || 'N/A';
+            document.getElementById('modal-view').classList.remove('hidden');
+        }
+
+        window.openEditModal = function(id) {
+            const p = patients.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-name').value = p.name;
+            document.getElementById('edit-age').value = p.age;
+            document.getElementById('edit-vision').value = p.vision;
+            document.getElementById('edit-power').value = p.power;
+            document.getElementById('edit-symptoms').value = p.symptoms;
+            document.getElementById('edit-diagnostic').value = p.diagnostic;
+            document.getElementById('edit-treatment').value = p.treatment;
+            document.getElementById('edit-spnote').value = p.spNote;
+            document.getElementById('modal-edit').classList.remove('hidden');
+        }
+
+        window.showConfirmModal = function(msg, action) {
+            confirmAction = action;
+            document.getElementById('confirm-msg').innerText = msg;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+            if(confirmAction) confirmAction();
+            closeModal('modal-confirm');
+        });
+
+        // FACTORY RESET
+        window.performFactoryReset = async function() {
+            patients = [];
+            savePatients(true); // Empty out local storage
+            renderRecords();
+            renderSummary();
+            
+            // Delete all docs in cloud collection if connected
+            if(navigator.onLine && currentUser && db) {
+                try {
+                    const patientsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients');
+                    const snapshot = await getDocs(patientsRef);
+                    const deletePromises = [];
+                    snapshot.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+                    await Promise.all(deletePromises);
+                } catch(err) { console.error(err); }
+            }
+            showToast('All records completely wiped!');
+        }
+
+        // --- THEME & BACKGROUND HANDLING ---
+        window.setTheme = function(color) {
+            themeColor = color;
+            localStorage.setItem('optoTheme', color);
+            applyTheme(color);
+        }
+
+        window.applyTheme = function(color) {
+            const body = document.getElementById('app-body');
+            body.className = body.className.replace(/theme-\w+/g, '');
+            body.classList.add(`theme-${color}`);
+            
+            const toggleUI = document.getElementById('blur-toggle-ui');
+            toggleUI.className = toggleUI.className.replace(/peer-checked:bg-\w+-\d+/g, '');
+            
+            let twColorClass = 'peer-checked:bg-pink-600';
+            if(color==='purple') twColorClass = 'peer-checked:bg-purple-600';
+            if(color==='blue') twColorClass = 'peer-checked:bg-blue-600';
+            if(color==='green') twColorClass = 'peer-checked:bg-emerald-600';
+            if(color==='orange') twColorClass = 'peer-checked:bg-orange-500';
+            toggleUI.classList.add(twColorClass);
+
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if(btn.dataset.color === color) {
+                    btn.classList.add('ring-4', 'ring-offset-2', 'border-white');
+                    btn.classList.remove('opacity-70');
+                } else {
+                    btn.classList.remove('ring-4', 'ring-offset-2', 'border-white');
+                    btn.classList.add('opacity-70');
+                }
+            });
+        }
+
+        document.getElementById('bg-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    bgImage = event.target.result;
+                    localStorage.setItem('optoBgImage', bgImage);
+                    applyBackground();
+                    showToast('Background updated');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('bg-blur-toggle').addEventListener('change', function(e) {
+            blurBg = e.target.checked;
+            localStorage.setItem('optoBlurBg', blurBg);
+            applyBackground();
+        });
+
+        window.removeBackground = function() {
+            bgImage = '';
+            localStorage.removeItem('optoBgImage');
+            document.getElementById('bg-upload').value = '';
+            applyBackground();
+            showToast('Background removed');
+        }
+
+        window.applyBackground = function() {
+            const bgLayer = document.getElementById('bg-layer');
+            const blurLayer = document.getElementById('blur-layer');
+            
+            if(bgImage) {
+                bgLayer.style.backgroundImage = `url(${bgImage})`;
+                bgLayer.classList.remove('hidden');
+                if(blurBg) blurLayer.classList.remove('hidden');
+                else blurLayer.classList.add('hidden');
+            } else {
+                bgLayer.classList.add('hidden');
+                blurLayer.classList.add('hidden');
+            }
+        }
+
+        // --- EXPORT ---
+        window.exportCSV = function() {
+            const headers = ['Index', 'Date', 'Name', 'Age', 'Vision', 'Power', 'Symptoms', 'Diagnostic', 'Treatment', 'SP Note'];
+            const rows = patients.map(p => [
+                p.indexNo, p.date, p.name, p.age, p.vision, p.power, p.symptoms, p.diagnostic, p.treatment, p.spNote
+            ]);
+            
+            const processRow = row => row.map(item => `"${(item || '').replace(/"/g, '""')}"`).join(',');
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(processRow)].join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `OptoCare_Records_${getTodayDate()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Exported to Excel (CSV)!");
+        }
+    </script>
+</body>
+</html>
