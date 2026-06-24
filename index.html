@@ -151,7 +151,11 @@
                         <!-- Details -->
                         <div class="space-y-4 md:col-span-2 bg-gray-50/80 p-4 md:p-6 rounded-2xl border border-gray-100">
                             <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-user-circle mr-2 text-lg"></i> Patient Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Date *</label>
+                                    <input type="date" id="entry-date" required class="w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base">
+                                </div>
                                 <div>
                                     <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                                     <input type="text" id="entry-name" required class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. Nimal Perera">
@@ -168,19 +172,7 @@
                             <h3 class="font-semibold text-blue-800 flex items-center"><i class="fas fa-eye mr-2"></i> Examination</h3>
                             <div>
                                 <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Vision</label>
-                                <select id="entry-vision" class="w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base">
-                                    <option value="6/6">6/6</option>
-                                    <option value="6/9">6/9</option>
-                                    <option value="6/12">6/12</option>
-                                    <option value="6/18">6/18</option>
-                                    <option value="6/24">6/24</option>
-                                    <option value="6/36">6/36</option>
-                                    <option value="6/60">6/60</option>
-                                    <option value="Count Fingers (CF)">Count Fingers (CF)</option>
-                                    <option value="Hand Movements (HM)">Hand Movements (HM)</option>
-                                    <option value="Light Perception (LP)">Light Perception (LP)</option>
-                                    <option value="No Light Perception (NLP)">No Light Perception (NLP)</option>
-                                </select>
+                                <input type="text" id="entry-vision" class="capitalize-input w-full p-3 rounded-xl border border-gray-200 bg-white focus-ring-primary transition-all text-sm md:text-base" placeholder="e.g. 6/6, 6/9">
                             </div>
                             <div>
                                 <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Power / Refraction</label>
@@ -391,6 +383,10 @@
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="edit-date" required class="w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
+                    </div>
+                    <div>
                         <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Name</label>
                         <input type="text" id="edit-name" required class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
                     </div>
@@ -400,19 +396,7 @@
                     </div>
                     <div>
                         <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Vision</label>
-                        <select id="edit-vision" class="w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base">
-                            <option value="6/6">6/6</option>
-                            <option value="6/9">6/9</option>
-                            <option value="6/12">6/12</option>
-                            <option value="6/18">6/18</option>
-                            <option value="6/24">6/24</option>
-                            <option value="6/36">6/36</option>
-                            <option value="6/60">6/60</option>
-                            <option value="Count Fingers (CF)">Count Fingers (CF)</option>
-                            <option value="Hand Movements (HM)">Hand Movements (HM)</option>
-                            <option value="Light Perception (LP)">Light Perception (LP)</option>
-                            <option value="No Light Perception (NLP)">No Light Perception (NLP)</option>
-                        </select>
+                        <input type="text" id="edit-vision" class="capitalize-input w-full p-2 border rounded-lg focus-ring-primary outline-none text-sm md:text-base" placeholder="e.g. 6/6">
                     </div>
                     <div>
                         <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Power</label>
@@ -515,7 +499,7 @@
                         snapshot.forEach(doc => cloudPatients.push(doc.data()));
                         
                         if(cloudPatients.length > 0) {
-                            cloudPatients.sort((a,b) => b.id - a.id);
+                            cloudPatients.sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
                             patients = cloudPatients;
                             localStorage.setItem('optoPatients', JSON.stringify(patients)); // Phone එකේ Save කිරීම
                             updateNextIndex();
@@ -541,6 +525,7 @@
             applyBackground();
             document.getElementById('bg-blur-toggle').checked = blurBg;
             document.getElementById('print-date').innerText = `Generated on: ${getTodayDate()}`;
+            document.getElementById('entry-date').value = getTodayDate();
             updateNextIndex();
             
             document.querySelectorAll('.capitalize-input').forEach(input => {
@@ -650,6 +635,17 @@
             document.getElementById('next-index-display').innerText = getNextIndex();
         }
 
+        // කමා (,) දාලා තියෙන වචන වෙන වෙනම පේළි වලට කඩන විශේෂ Function එක
+        function formatList(text) {
+            if (!text || text.trim() === '') return 'N/A';
+            if (text.includes(',')) {
+                return text.split(',').map(i => {
+                    let trimmed = i.trim();
+                    return trimmed ? `<div class="whitespace-normal mt-1"><i class="fas fa-circle text-[8px] text-gray-400 mr-1.5 mb-0.5"></i>${trimmed}</div>` : '';
+                }).join('');
+            }
+            return text;
+        }
 
         // --- CRUD OPERATIONS ---
         
@@ -663,7 +659,7 @@
             const newPatient = {
                 id: Date.now(),
                 indexNo: getNextIndex(),
-                date: getTodayDate(),
+                date: document.getElementById('entry-date').value,
                 name: name,
                 age: age,
                 vision: document.getElementById('entry-vision').value,
@@ -678,7 +674,7 @@
             savePatients(); 
             
             document.getElementById('add-patient-form').reset();
-            document.getElementById('entry-vision').value = '6/6';
+            document.getElementById('entry-date').value = getTodayDate();
             showToast('Record Saved to Cloud!');
             switchTab('records');
         });
@@ -689,6 +685,7 @@
             const id = parseInt(document.getElementById('edit-id').value);
             const index = patients.findIndex(x => x.id === id);
             if(index !== -1) {
+                patients[index].date = document.getElementById('edit-date').value;
                 patients[index].name = document.getElementById('edit-name').value;
                 patients[index].age = document.getElementById('edit-age').value;
                 patients[index].vision = document.getElementById('edit-vision').value;
@@ -728,6 +725,9 @@
 
         // --- RENDER VIEWS ---
         window.renderRecords = function() {
+            // Sort all patients by date descending (Newest first)
+            patients.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
             const container = document.getElementById('records-container');
             if (patients.length === 0) {
                 container.innerHTML = `
@@ -771,14 +771,14 @@
                     const safeName = p.name.replace(/'/g, "&#39;");
                     html += `
                         <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                            <td class="p-3 md:p-4">
+                            <td class="p-3 md:p-4 align-top">
                                 <span class="font-mono text-xs md:text-sm font-semibold text-primary">${p.indexNo}</span>
                                 <div class="text-[10px] md:text-xs text-gray-400 mt-1">${p.date}</div>
                             </td>
-                            <td class="p-3 md:p-4 font-medium text-gray-800 text-sm md:text-base">${p.name}</td>
-                            <td class="p-3 md:p-4 text-gray-600 text-sm md:text-base">${p.age}</td>
-                            <td class="p-3 md:p-4 text-gray-600 text-xs md:text-sm max-w-[100px] md:max-w-[200px] truncate">${p.symptoms || 'N/A'}</td>
-                            <td class="p-3 md:p-4 text-right print-hidden">
+                            <td class="p-3 md:p-4 font-medium text-gray-800 text-sm md:text-base align-top">${p.name}</td>
+                            <td class="p-3 md:p-4 text-gray-600 text-sm md:text-base align-top">${p.age}</td>
+                            <td class="p-3 md:p-4 text-gray-600 text-xs md:text-sm align-top leading-relaxed">${formatList(p.symptoms)}</td>
+                            <td class="p-3 md:p-4 text-right print-hidden align-top">
                                 <div class="flex items-center justify-end space-x-1 md:space-x-2">
                                     <button onclick="openViewModal(${p.id})" class="text-blue-500 hover:bg-blue-50 p-2 md:p-3 rounded-lg transition-colors"><i class="fas fa-eye"></i></button>
                                     <button onclick="openEditModal(${p.id})" class="text-orange-500 hover:bg-orange-50 p-2 md:p-3 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
@@ -856,12 +856,12 @@
             document.getElementById('view-name').innerText = p.name;
             document.getElementById('view-meta').innerText = `Index: ${p.indexNo} | Date: ${p.date}`;
             document.getElementById('view-age').innerText = p.age;
-            document.getElementById('view-vision').innerText = p.vision || 'N/A';
-            document.getElementById('view-power').innerText = p.power || 'N/A';
-            document.getElementById('view-symptoms').innerText = p.symptoms || 'N/A';
-            document.getElementById('view-diagnostic').innerText = p.diagnostic || 'N/A';
-            document.getElementById('view-treatment').innerText = p.treatment || 'N/A';
-            document.getElementById('view-spnote').innerText = p.spNote || 'N/A';
+            document.getElementById('view-vision').innerHTML = formatList(p.vision);
+            document.getElementById('view-power').innerHTML = formatList(p.power);
+            document.getElementById('view-symptoms').innerHTML = formatList(p.symptoms);
+            document.getElementById('view-diagnostic').innerHTML = formatList(p.diagnostic);
+            document.getElementById('view-treatment').innerHTML = formatList(p.treatment);
+            document.getElementById('view-spnote').innerHTML = formatList(p.spNote);
             document.getElementById('modal-view').classList.remove('hidden');
         }
 
@@ -869,6 +869,7 @@
             const p = patients.find(x => x.id === id);
             if(!p) return;
             document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-date').value = p.date;
             document.getElementById('edit-name').value = p.name;
             document.getElementById('edit-age').value = p.age;
             document.getElementById('edit-vision').value = p.vision;
