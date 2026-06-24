@@ -465,16 +465,15 @@
         import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // GITHUB PAGES SETUP: Replace the object below with your Firebase Config when you are ready to enable Cloud Storage!
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            /* Paste your Firebase config here when ready! E.g.
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "...",
-            messagingSenderId: "...",
-            appId: "..."
-            */
-        };
+		  const firebaseConfig = {
+			apiKey: "AIzaSyC6sELRrNzDJtgevMGauITfjcenDcTdcoo",
+			authDomain: "optocare.firebaseapp.com",
+			projectId: "optocare",
+			storageBucket: "optocare.firebasestorage.app",
+			messagingSenderId: "1040595810300",
+			appId: "1:1040595810300:web:66aa89f5957be3783fe479"
+		  };
+
         
         let app, auth, db;
         let appId = 'optocare-app';
