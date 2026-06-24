@@ -304,7 +304,8 @@
                             <div class="flex items-center justify-between">
                                 <label class="inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="bg-blur-toggle" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600" id="blur-toggle-ui"></div>
+                                    <!-- FIXED TOGGLE BUTTON: Added 'relative' class here -->
+                                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600" id="blur-toggle-ui"></div>
                                     <span class="ml-3 text-sm font-medium text-gray-700">Blur Background</span>
                                 </label>
                                 <button onclick="removeBackground()" class="text-xs text-red-500 font-medium hover:underline">Remove Image</button>
@@ -327,17 +328,17 @@
 
                     <!-- Cloud Sync Backup -->
                     <div class="bg-blue-50/80 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-blue-200 md:col-span-2 mt-2">
-                        <h3 class="text-base md:text-lg font-bold text-blue-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt mr-2"></i> Cloud Backup (Firebase)</h3>
-                        <p class="text-blue-600 text-xs md:text-sm mb-4">Currently saving to Local Storage. When connected to the internet, your data will auto-sync. You can also sync manually.</p>
+                        <h3 class="text-base md:text-lg font-bold text-blue-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt mr-2"></i> Cloud Real-Time Sync (Firebase)</h3>
+                        <p class="text-blue-600 text-xs md:text-sm mb-4">This app is securely connected to your shared cloud database. Any device with the PIN will see the same patients automatically.</p>
                         <button onclick="syncToCloud(false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center transition-colors w-full sm:w-auto shadow-md">
-                            <i class="fas fa-sync mr-2" id="sync-icon"></i> Sync Data to Cloud
+                            <i class="fas fa-sync mr-2" id="sync-icon"></i> Force Manual Sync
                         </button>
                     </div>
 
                     <!-- Danger Zone -->
                     <div class="bg-red-50/80 backdrop-blur-lg p-5 md:p-6 rounded-3xl shadow-sm border border-red-200 md:col-span-2 mt-2">
                         <h3 class="text-base md:text-lg font-bold text-red-800 mb-2 flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i> Danger Zone</h3>
-                        <p class="text-red-600 text-xs md:text-sm mb-4">This action cannot be undone. It will permanently delete all patient records from this device and the Cloud.</p>
+                        <p class="text-red-600 text-xs md:text-sm mb-4">This action cannot be undone. It will permanently delete all patient records from ALL devices and the Cloud.</p>
                         <button onclick="showConfirmModal('WARNING: This will delete ALL patient records permanently. Are you absolutely sure?', performFactoryReset)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center transition-colors w-full sm:w-auto shadow-md">
                             <i class="fas fa-trash-alt mr-2"></i> Factory Reset App
                         </button>
@@ -457,27 +458,27 @@
         </div>
     </div>
 
-    <!-- MAIN JAVASCRIPT LOGIC (LOCAL FIRST + AUTO CLOUD SYNC) -->
+    <!-- MAIN JAVASCRIPT LOGIC (SHARED CLOUD SYNC) -->
     <script type="module">
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // GITHUB PAGES SETUP: Replace the object below with your Firebase Config when you are ready to enable Cloud Storage!
-		  const firebaseConfig = {
-			apiKey: "AIzaSyC6sELRrNzDJtgevMGauITfjcenDcTdcoo",
-			authDomain: "optocare.firebaseapp.com",
-			projectId: "optocare",
-			storageBucket: "optocare.firebasestorage.app",
-			messagingSenderId: "1040595810300",
-			appId: "1:1040595810300:web:66aa89f5957be3783fe479"
-		  };
-
+        // Your specific Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6sELRrNzDJtgevMGauITfjcenDcTdcoo",
+            authDomain: "optocare.firebaseapp.com",
+            projectId: "optocare",
+            storageBucket: "optocare.firebasestorage.app",
+            messagingSenderId: "1040595810300",
+            appId: "1:1040595810300:web:66aa89f5957be3783fe479"
+        };
         
         let app, auth, db;
         let appId = 'optocare-app';
         let currentUser = null;
+        let unsubscribeSnapshot = null;
 
         try {
             if(Object.keys(firebaseConfig).length > 0) {
@@ -485,7 +486,7 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
             }
-        } catch(e) { console.log("Firebase not configured yet, running purely in Local mode."); }
+        } catch(e) { console.log("Firebase not configured yet."); }
 
         // --- LOCAL DATA & STATE ---
         let patients = JSON.parse(localStorage.getItem('optoPatients')) || [];
@@ -494,34 +495,41 @@
         let blurBg = JSON.parse(localStorage.getItem('optoBlurBg')) || false;
         let confirmAction = null;
 
-        // --- AUTHENTICATION FLOW (FIREBASE) ---
+        // --- AUTHENTICATION & REALTIME LISTENER ---
         const initAuth = async () => {
-            if(!auth) return; // Skip if no config provided yet
+            if(!auth) return;
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) { console.error("Firebase Auth Error:", error); }
         };
 
         if(auth) {
             onAuthStateChanged(auth, async (user) => {
                 currentUser = user;
-                // If local storage is empty, try to download from Cloud once on first load
-                if (user && patients.length === 0) {
-                    try {
-                        const patientsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'patients');
-                        const snapshot = await getDocs(patientsRef);
-                        snapshot.forEach(doc => patients.push(doc.data()));
-                        if(patients.length > 0) {
-                            patients.sort((a,b) => b.id - a.id);
-                            savePatients(true); // Save locally but don't re-upload
-                            renderRecords();
-                            renderSummary();
+                if (user && db) {
+                    // හැමෝටම පොදු (Shared) Folder එකට Realtime සම්බන්ධ වීම
+                    const sharedRef = collection(db, 'artifacts', appId, 'shared_patients');
+                    
+                    unsubscribeSnapshot = onSnapshot(sharedRef, (snapshot) => {
+                        let cloudPatients = [];
+                        snapshot.forEach(doc => cloudPatients.push(doc.data()));
+                        
+                        if(cloudPatients.length > 0) {
+                            cloudPatients.sort((a,b) => b.id - a.id);
+                            patients = cloudPatients;
+                            localStorage.setItem('optoPatients', JSON.stringify(patients)); // Phone එකේ Save කිරීම
+                            updateNextIndex();
+                            
+                            // ඇප් එක open කරලා තියෙනවා නම් UI එක update කිරීම
+                            if(!document.getElementById('main-app').classList.contains('hidden')) {
+                                renderRecords();
+                                renderSummary();
+                            }
+                        } else if (snapshot.empty && patients.length > 0) {
+                             // If cloud is empty but local has data, push local up (First time sync)
+                             window.syncToCloud(true);
                         }
-                    } catch(e) { console.log("No cloud data found to download."); }
+                    }, (error) => { console.error("Cloud listener error:", error); });
                 }
             });
         }
@@ -543,20 +551,13 @@
         });
 
         // --- AUTO CLOUD SYNC LOGIC ---
-        
-        // Auto Sync when the device reconnects to the Internet
-        window.addEventListener('online', () => {
-            if(patients.length > 0) window.syncToCloud(true); // true = silent background sync
-        });
-
-        // Main Sync Function
         window.syncToCloud = async function(isSilent = false) {
             if (!navigator.onLine) {
                 if(!isSilent) showToast("No internet connection!");
                 return;
             }
             if (!currentUser || !db) {
-                if(!isSilent) showToast("Firebase not configured yet. Running safely in local mode.");
+                if(!isSilent) showToast("Firebase not configured properly.");
                 return;
             }
 
@@ -564,13 +565,13 @@
             if(icon) icon.classList.add('fa-spin');
 
             try {
-                // Upload all local patients to Firebase Database
+                // Shared Database එකට Upload කිරීම
                 const batchPromises = patients.map(p => {
-                    const patientDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', p.id.toString());
-                    return setDoc(patientDoc, p); // Overwrites/updates cloud with current local data
+                    const patientDoc = doc(db, 'artifacts', appId, 'shared_patients', p.id.toString());
+                    return setDoc(patientDoc, p); 
                 });
                 await Promise.all(batchPromises);
-                if(!isSilent) showToast("Successfully backed up to Cloud!");
+                if(!isSilent) showToast("Successfully synced to Cloud!");
             } catch(err) {
                 console.error("Cloud sync issue:", err);
                 if(!isSilent) showToast("Cloud Sync failed.");
@@ -579,12 +580,10 @@
             }
         }
 
-        // Master Save Function (Saves Locally, then triggers Sync)
         function savePatients(skipSync = false) {
             localStorage.setItem('optoPatients', JSON.stringify(patients));
             updateNextIndex();
             
-            // Automatically sync in background if online and connected to firebase
             if(!skipSync && navigator.onLine && currentUser && db) {
                 window.syncToCloud(true); 
             }
@@ -598,7 +597,7 @@
             if (pin === '1234') {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                showToast('Welcome to OptoCare!');
+                showToast('Welcome to OptoCare Cloud!');
                 switchTab('home');
                 renderRecords(); 
                 renderSummary(); 
@@ -676,11 +675,11 @@
             };
 
             patients.unshift(newPatient);
-            savePatients(); // Saves locally & auto-syncs
+            savePatients(); 
             
             document.getElementById('add-patient-form').reset();
             document.getElementById('entry-vision').value = '6/6';
-            showToast('Record Saved!');
+            showToast('Record Saved to Cloud!');
             switchTab('records');
         });
 
@@ -699,26 +698,24 @@
                 patients[index].treatment = document.getElementById('edit-treatment').value;
                 patients[index].spNote = document.getElementById('edit-spnote').value;
                 
-                savePatients(); // Saves locally & auto-syncs
+                savePatients();
                 renderRecords();
                 closeModal('modal-edit');
-                showToast('Record Updated!');
+                showToast('Record Updated in Cloud!');
             }
         });
 
         // DELETE
         window.confirmDelete = function(id, name) {
             confirmAction = async () => {
-                // 1. Remove locally
                 patients = patients.filter(x => x.id !== id);
-                savePatients(true); // Save locally without triggering auto-sync all
+                savePatients(true); 
                 renderRecords();
                 renderSummary();
                 
-                // 2. Remove specifically from cloud if connected
                 if(navigator.onLine && currentUser && db) {
                     try {
-                        const patientDoc = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'patients', id.toString());
+                        const patientDoc = doc(db, 'artifacts', appId, 'shared_patients', id.toString());
                         await deleteDoc(patientDoc);
                     } catch(e) { console.error("Cloud delete failed", e); }
                 }
@@ -897,14 +894,13 @@
         // FACTORY RESET
         window.performFactoryReset = async function() {
             patients = [];
-            savePatients(true); // Empty out local storage
+            savePatients(true); 
             renderRecords();
             renderSummary();
             
-            // Delete all docs in cloud collection if connected
             if(navigator.onLine && currentUser && db) {
                 try {
-                    const patientsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'patients');
+                    const patientsRef = collection(db, 'artifacts', appId, 'shared_patients');
                     const snapshot = await getDocs(patientsRef);
                     const deletePromises = [];
                     snapshot.forEach(d => deletePromises.push(deleteDoc(d.ref)));
